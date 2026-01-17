@@ -1,0 +1,4 @@
+centralApiUrl: ws://localhost:8000/agent/ws
+logLevel: INFO
+maxReconnectAttempts: 32
+reconnectDelaySec: 5
