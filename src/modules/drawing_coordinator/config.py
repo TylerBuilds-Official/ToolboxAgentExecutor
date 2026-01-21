@@ -9,7 +9,7 @@ import os
 # =============================================================================
 
 # Default output path for transmittal processing
-DEFAULT_OUTPUT_PATH = Path(os.path.expanduser("~")) / "Desktop" / "Fabcore" / "DrawingCoordinatorTools" / "Output"
+DEFAULT_OUTPUT_PATH = Path(os.path.expanduser("~")) / "Desktop" / "Fabcore" / "DrawingCoordinatorTools" / "Transmittals"
 
 # Default downloads folder for transmittal scanning
 DEFAULT_DOWNLOADS_PATH = Path(os.path.expanduser("~")) / "Downloads"
