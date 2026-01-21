@@ -1,5 +1,6 @@
 from src.modules.filesystem.operations import FileSystemModule
 from src.modules.ui.dialogs import UIModule
+from src.modules.drawing_coordinator.operations import DrawingCoordinatorModule
 
 
 class CommandDispatcher:
@@ -7,6 +8,7 @@ class CommandDispatcher:
         self.modules = {
             "filesystem": FileSystemModule(),
             "ui": UIModule(),
+            "drawing_coordinator": DrawingCoordinatorModule(),
         }
 
     def get_capabilities(self) -> list[str]:
