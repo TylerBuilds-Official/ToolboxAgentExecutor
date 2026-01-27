@@ -1,0 +1,19 @@
+# FabCore Agent Update Configuration
+# These settings control how the agent handles updates
+
+updates:
+  # Enable/disable auto-update functionality
+  enabled: true
+  
+  # Automatically apply forced updates without user interaction
+  # If false, even forced updates will show a notification first
+  autoApplyForced: true
+  
+  # Check for updates on startup (in addition to WebSocket notifications)
+  checkOnStartup: true
+  
+  # Show system tray notifications for available updates
+  showNotifications: true
+  
+  # Keep previous version for rollback (recommended: true)
+  keepRollback: true
