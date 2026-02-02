@@ -82,9 +82,34 @@ class AgentConnection:
 
             # Listen for messages
             async for message in websocket:
-                response = await self.handle_message(message)
-                if response:
-                    await websocket.send(json.dumps(response))
+                try:
+                    response = await self.handle_message(message)
+                    if response:
+                        # Guard against serialization and send failures
+                        try:
+                            payload = json.dumps(response)
+                        except (TypeError, ValueError) as e:
+                            logger.error(f"Failed to serialize response: {e}")
+                            payload = json.dumps({
+                                "command_id": response.get("command_id"),
+                                "success": False,
+                                "error": f"Response serialization failed: {e}"
+                            })
+                        
+                        # Guard against oversized payloads killing the socket
+                        if len(payload) > 10 * 1024 * 1024:  # 10MB limit
+                            logger.warning(f"Response too large ({len(payload)} bytes), truncating")
+                            payload = json.dumps({
+                                "command_id": response.get("command_id"),
+                                "success": False,
+                                "error": f"Response too large ({len(payload)} bytes). Consider reading smaller chunks."
+                            })
+                        
+                        await websocket.send(payload)
+                except websockets.exceptions.ConnectionClosed:
+                    raise  # Let the outer handler deal with reconnection
+                except Exception as e:
+                    logger.exception(f"Error processing message (connection preserved): {e}")
 
     async def _send_registration(self):
         """Send registration message to server."""

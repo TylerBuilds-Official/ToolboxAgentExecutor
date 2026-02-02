@@ -226,9 +226,12 @@ class FileSystemModule(BaseModule):
             
             size = p.stat().st_size
             
-            # Limit file size to prevent memory issues (16MB)
-            if size > 16 * 1024 * 1024:
-                return self._error(f"File too large ({size} bytes). Maximum is 16MB.")
+            # Limit file size to prevent oversized WebSocket responses (5MB)
+            if size > 5 * 1024 * 1024:
+                return self._error(
+                    f"File too large for WebSocket transfer ({size:,} bytes). "
+                    f"Maximum is 5MB. Consider reading specific sections."
+                )
             
             async with aiofiles.open(path, 'r', encoding=encoding) as f:
                 content = await f.read()

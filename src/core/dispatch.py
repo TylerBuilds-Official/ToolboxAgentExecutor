@@ -38,5 +38,8 @@ class CommandDispatcher:
             method = getattr(module, action)
             result = await method(**params)
             return {**base_response, **result}
+        except TypeError as e:
+            # Common: wrong params passed to action method
+            return {**base_response, "success": False, "error": f"Invalid parameters for {module_name}.{action}: {e}"}
         except Exception as e:
-            return {**base_response, "success": False, "error": str(e)}
+            return {**base_response, "success": False, "error": f"{type(e).__name__}: {e}"}

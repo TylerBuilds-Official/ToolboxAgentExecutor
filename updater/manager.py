@@ -300,7 +300,7 @@ echo FabCore Agent Updater > "{log_path}"
 echo Timestamp: %date% %time% >> "{log_path}"
 
 echo Waiting for agent to exit... >> "{log_path}"
-waitfor /t 3 SomethingThatWillNeverHappen >nul 2>&1
+timeout /t 3 /nobreak >nul 2>&1
 
 echo Copying new files... >> "{log_path}"
 robocopy "{extract_str}" "{app_str}" /E /NFL /NDL /NJH /NJS /NC /NS /NP >> "{log_path}" 2>&1
@@ -309,7 +309,7 @@ echo Cleaning up... >> "{log_path}"
 rmdir /S /Q "{extract_str}" >nul 2>&1
 
 echo Launching updated agent... >> "{log_path}"
-explorer.exe "{exe_path}"
+start "" "{exe_path}"
 
 echo Update complete! >> "{log_path}"
 """
