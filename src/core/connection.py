@@ -57,16 +57,11 @@ class AgentConnection:
             except Exception as e:
                 logger.error(f"Connection error: {e}")
                 self._connected = False
-                
-            if attempt < config.max_reconnect_attempts:
-                delay = min(config.reconnect_delay_sec * (2 ** (attempt - 1)), 60)  # Exponential backoff, max 60s
-                logger.info(f"Reconnecting in {delay} seconds... (attempt {attempt}/{config.max_reconnect_attempts})")
-                await asyncio.sleep(delay)
-            else:
-                raise ConnectionError(
-                    f"Max reconnect attempts ({config.max_reconnect_attempts}) reached. "
-                    f"Please restart the agent."
-                )
+            
+            # Always retry with exponential backoff, cap at 5 minutes
+            delay = min(config.reconnect_delay_sec * (2 ** min(attempt - 1, 6)), 300)
+            logger.info(f"Reconnecting in {delay}s... (attempt {attempt})")
+            await asyncio.sleep(delay)
 
     async def connect(self):
         """Establish WebSocket connection and handle messages."""

@@ -55,6 +55,8 @@ class Config:
 
     @property
     def max_reconnect_attempts(self) -> int:
+        # NOTE: Currently unused - agent now retries forever with exponential backoff
+        # Kept for potential future use (e.g., optional limit via config)
         return self._config.get("maxReconnectAttempts", 8)
 
     @property

@@ -3,11 +3,11 @@
 # Central API WebSocket URL
 # Development: ws://localhost:8000/agent/ws
 # Production:  wss://fabcore.metalsfab.local/agent/ws
-centralApiUrl: ws://localhost:8000/agent/ws
+centralApiUrl: wss://10.0.0.12:6001/agent/ws
 
 # Logging level (DEBUG, INFO, WARNING, ERROR)
 logLevel: INFO
 
 # Connection settings
-maxReconnectAttempts: 32
+maxReconnectAttempts: 500
 reconnectDelaySec: 5
