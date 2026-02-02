@@ -300,7 +300,26 @@ echo FabCore Agent Updater > "{log_path}"
 echo Timestamp: %date% %time% >> "{log_path}"
 
 echo Waiting for agent to exit... >> "{log_path}"
-timeout /t 3 /nobreak >nul 2>&1
+set RETRIES=0
+:WAIT_LOOP
+tasklist /FI "IMAGENAME eq FabCoreAgent.exe" 2>nul | find /I "FabCoreAgent.exe" >nul
+if %ERRORLEVEL%==0 (
+    set /A RETRIES+=1
+    if %RETRIES% GEQ 30 (
+        echo Timeout waiting for agent to exit, killing... >> "{log_path}"
+        taskkill /F /IM FabCoreAgent.exe >nul 2>&1
+        timeout /t 2 /nobreak >nul 2>&1
+    ) else (
+        timeout /t 1 /nobreak >nul 2>&1
+        goto WAIT_LOOP
+    )
+)
+echo Agent process exited >> "{log_path}"
+
+echo Cleaning stale PyInstaller temp dirs... >> "{log_path}"
+for /d %%D in ("%LOCALAPPDATA%\Temp\_MEI*") do (
+    rmdir /S /Q "%%D" >nul 2>&1
+)
 
 echo Copying new files... >> "{log_path}"
 robocopy "{extract_str}" "{app_str}" /E /NFL /NDL /NJH /NJS /NC /NS /NP >> "{log_path}" 2>&1

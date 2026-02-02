@@ -110,6 +110,15 @@ class AgentConnection:
                     raise  # Let the outer handler deal with reconnection
                 except Exception as e:
                     logger.exception(f"Error processing message (connection preserved): {e}")
+                    # Try to send error response so server doesn't hang waiting
+                    try:
+                        error_response = json.dumps({
+                            "success": False,
+                            "error": f"Agent error: {type(e).__name__}: {e}"
+                        })
+                        await websocket.send(error_response)
+                    except Exception:
+                        pass  # If we can't send, at least the connection survives
 
     async def _send_registration(self):
         """Send registration message to server."""
