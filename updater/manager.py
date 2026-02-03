@@ -13,7 +13,14 @@ import aiohttp
 
 from updater._dataclass import UpdateInfo
 
-logger = logging.getLogger(__name__)
+# Use centralized logger
+try:
+    from src.utils.logger import get_logger
+    logger = get_logger("updater")
+except ImportError:
+    # Fallback if running standalone
+    import logging
+    logger = logging.getLogger(__name__)
 
 
 class UpdateManager:
@@ -285,53 +292,52 @@ class UpdateManager:
         # 2. Copy new files
         # 3. Restart the exe
         batch_path = self.updates_dir / "apply_update.bat"
-        
-        # Build the batch script (use double backslashes for literal backslashes)
+
         extract_str = str(extract_dir)
         app_str = str(self.app_dir)
-        
+
         log_path = str(self.updates_dir / "update_batch.log")
         exe_path = f"{app_str}\\FabCoreAgent.exe"
-        
+
         # Create the actual batch script
         batch_path = self.updates_dir / "apply_update.bat"
         batch_content = f"""@echo off
-echo FabCore Agent Updater > "{log_path}"
-echo Timestamp: %date% %time% >> "{log_path}"
+        setlocal
 
-echo Waiting for agent to exit... >> "{log_path}"
-set RETRIES=0
-:WAIT_LOOP
-tasklist /FI "IMAGENAME eq FabCoreAgent.exe" 2>nul | find /I "FabCoreAgent.exe" >nul
-if %ERRORLEVEL%==0 (
-    set /A RETRIES+=1
-    if %RETRIES% GEQ 30 (
-        echo Timeout waiting for agent to exit, killing... >> "{log_path}"
-        taskkill /F /IM FabCoreAgent.exe >nul 2>&1
+        echo FabCore Agent Updater > "{log_path}"
+        echo Timestamp: %date% %time% >> "{log_path}"
+
+        echo Waiting for agent to exit... >> "{log_path}"
+        :WAIT_LOOP
+        tasklist /FI "IMAGENAME eq FabCoreAgent.exe" 2>nul | find /I "FabCoreAgent.exe" >nul
+        if %ERRORLEVEL%==0 (
+            timeout /t 1 /nobreak >nul 2>&1
+            goto WAIT_LOOP
+        )
+        echo Agent process exited >> "{log_path}"
+
+        echo Waiting for file locks to release... >> "{log_path}"
+        timeout /t 3 /nobreak >nul 2>&1
+
+        echo Copying new files... >> "{log_path}"
+        robocopy "{extract_str}" "{app_str}" /E /NFL /NDL /NJH /NJS /NC /NS /NP /W:3 /R:5 >> "{log_path}" 2>&1
+
+        echo Verifying exe exists... >> "{log_path}"
+        if not exist "{exe_path}" (
+            echo ERROR: Exe not found after copy! >> "{log_path}"
+            exit /b 1
+        )
+
+        echo Cleaning up extracted files... >> "{log_path}"
+        rmdir /S /Q "{extract_str}" >nul 2>&1
+
+        echo Launching updated agent... >> "{log_path}"
         timeout /t 2 /nobreak >nul 2>&1
-    ) else (
-        timeout /t 1 /nobreak >nul 2>&1
-        goto WAIT_LOOP
-    )
-)
-echo Agent process exited >> "{log_path}"
+        start "" "{exe_path}"
 
-echo Cleaning stale PyInstaller temp dirs... >> "{log_path}"
-for /d %%D in ("%LOCALAPPDATA%\Temp\_MEI*") do (
-    rmdir /S /Q "%%D" >nul 2>&1
-)
-
-echo Copying new files... >> "{log_path}"
-robocopy "{extract_str}" "{app_str}" /E /NFL /NDL /NJH /NJS /NC /NS /NP >> "{log_path}" 2>&1
-
-echo Cleaning up... >> "{log_path}"
-rmdir /S /Q "{extract_str}" >nul 2>&1
-
-echo Launching updated agent... >> "{log_path}"
-start "" "{exe_path}"
-
-echo Update complete! >> "{log_path}"
-"""
+        echo Update complete! >> "{log_path}"
+        endlocal
+        """
         
         with open(batch_path, 'w') as f:
             f.write(batch_content)
@@ -354,7 +360,7 @@ fso.DeleteFile "{batch_path}", True
         subprocess.Popen(
             ['wscript.exe', str(vbs_path)],
             cwd=str(self.updates_dir),
-            creationflags=subprocess.DETACHED_PROCESS,
+            creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )

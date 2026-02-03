@@ -6,18 +6,12 @@ from src.core.connection import AgentConnection
 from src.core.dispatch import CommandDispatcher
 from src.core.registration import AgentRegistration
 from src.utils.config import config
+from src.utils.logger import agent_logger, get_logger
 from updater import UpdateManager, UpdateInfo
 from version import __version__
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
+# Get module logger
+logger = get_logger(__name__)
 
 # Global references (for potential tray icon integration later)
 update_manager: UpdateManager = None
@@ -79,6 +73,9 @@ async def check_for_updates_on_startup():
 async def main():
     global update_manager, connection
     
+    # Log startup
+    agent_logger.operation("agent", "starting", f"v{__version__}")
+
     # Initialize dispatcher with available modules
     dispatcher = CommandDispatcher()
     
@@ -134,10 +131,10 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("Agent stopped by user")
+        agent_logger.operation("agent", "stopped", "User interrupt")
     except ConnectionError as e:
-        logger.error(f"Connection failed: {e}")
+        agent_logger.error(f"Connection failed: {e}")
         sys.exit(1)
     except Exception as e:
-        logger.exception(f"Unexpected error: {e}")
+        agent_logger.exception(f"Unexpected error: {e}")
         sys.exit(1)

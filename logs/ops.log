@@ -1,0 +1,7 @@
+2026-02-03 08:40:03 [INFO    ] FabCoreAgent: This is an info message
+2026-02-03 08:40:03 [DEBUG   ] FabCoreAgent: This is a debug message
+2026-02-03 08:40:03 [WARNING ] FabCoreAgent: This is a warning message
+2026-02-03 08:40:03 [ERROR   ] FabCoreAgent: This is an error message
+2026-02-03 08:40:03 [INFO    ] FabCoreAgent: [TEST_OP] started - Beginning test operation
+2026-02-03 08:40:03 [INFO    ] FabCoreAgent: [TEST_OP] completed - Test operation finished successfully
+2026-02-03 08:40:03 [INFO    ] FabCoreAgent.test_module: This is a message from a child logger

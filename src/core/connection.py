@@ -1,17 +1,17 @@
 import asyncio
 import json
-import logging
 from typing import TYPE_CHECKING, Optional
 
 import websockets
 
 from src.utils.config import config
+from src.utils.logger import get_logger
 
 if TYPE_CHECKING:
     from src.core.dispatch import CommandDispatcher
     from updater import UpdateManager
 
-logger = logging.getLogger(__name__)
+logger = get_logger("connection")
 
 
 class AgentConnection:
@@ -70,8 +70,9 @@ class AgentConnection:
         async with websockets.connect(
             self.server_url,
             ping_interval=30,
-            ping_timeout=10,
-            close_timeout=5
+            ping_timeout=None,  # Disabled: server doesn't send pings, agent sends its own
+            close_timeout=5,
+            max_size=16 * 1024 * 1024  # 16MB limit
         ) as websocket:
             self.websocket = websocket
             self._connected = True
@@ -143,6 +144,7 @@ class AgentConnection:
         Returns:
             Response dict to send back, or None if no response needed
         """
+        logger.debug(f"Received message: {len(message)} bytes")
         try:
             data = json.loads(message)
             msg_type = data.get("type")
@@ -171,7 +173,11 @@ class AgentConnection:
             
             # Command dispatch (module/action pattern)
             elif "module" in data and "action" in data:
-                logger.info(f"Received command: {data.get('module')}.{data.get('action')}")
+                content_preview = ""
+                if "params" in data and "content" in data.get("params", {}):
+                    content_len = len(data["params"]["content"])
+                    content_preview = f" | content_param={content_len} bytes"
+                logger.info(f"Received command: {data.get('module')}.{data.get('action')}{content_preview}")
                 return await self.dispatcher.dispatch(data)
             
             # Unknown message

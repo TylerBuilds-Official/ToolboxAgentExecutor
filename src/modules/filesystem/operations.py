@@ -5,6 +5,9 @@ import aiofiles
 from pathlib import Path
 from typing import Optional
 from src.modules.base import BaseModule
+from src.utils.logger import get_logger
+
+logger = get_logger("filesystem")
 
 
 class FileSystemModule(BaseModule):
@@ -17,6 +20,7 @@ class FileSystemModule(BaseModule):
 
     async def list_directory(self, path: str) -> dict:
         """List contents of a directory."""
+        logger.debug(f"Listing directory: {path}")
         try:
             p = Path(path)
             if not p.exists():
@@ -59,6 +63,7 @@ class FileSystemModule(BaseModule):
             path: Directory path to create
             parents: If True, create parent directories as needed (default True)
         """
+        logger.info(f"Creating directory: {path} (parents={parents})")
         try:
             p = Path(path)
             
@@ -104,6 +109,7 @@ class FileSystemModule(BaseModule):
         Returns:
             Nested tree structure with name, type, and children
         """
+        logger.debug(f"Building directory tree: {path} (max_depth={max_depth}, include_files={include_files}, include_hidden={include_hidden})")
         try:
             p = Path(path)
             if not p.exists():
@@ -187,6 +193,7 @@ class FileSystemModule(BaseModule):
 
     async def delete_directory(self, path: str, recursive: bool = False) -> dict:
         """Delete a directory. If recursive=True, deletes contents too."""
+        logger.warning(f"Deleting directory: {path} (recursive={recursive})")
         try:
             p = Path(path)
             if not p.exists():
@@ -217,6 +224,7 @@ class FileSystemModule(BaseModule):
 
     async def read_file(self, path: str, encoding: str = 'utf-8') -> dict:
         """Read contents of a text file."""
+        logger.debug(f"Reading file: {path}")
         try:
             p = Path(path)
             if not p.exists():
@@ -250,27 +258,36 @@ class FileSystemModule(BaseModule):
 
 
 
-    async def write_file(self, path: str, content: str, encoding: str = 'utf-8') -> dict:
-        """Write content to a file. Creates parent directories if needed."""
+    async def write_file(self, path: str, content: str, encoding: str = 'utf-8', append: bool = False) -> dict:
+        """Write content to a file. Creates parent directories if needed.
+
+        Args:
+            path: File path to write
+            content: Content to write
+            encoding: File encoding (default utf-8)
+            append: If True, append to file instead of overwriting
+        """
+        content_size = len(content) if content else 0
+        logger.info(f"{'Appending to' if append else 'Writing to'} file: {path} | content_size={content_size} bytes")
         try:
             p = Path(path)
-            
-            # Create parent directories if they don't exist
             p.parent.mkdir(parents=True, exist_ok=True)
-            
-            async with aiofiles.open(path, 'w', encoding=encoding) as f:
+
+            mode = 'a' if append else 'w'
+            logger.debug(f"Opening file with mode='{mode}', encoding='{encoding}'")
+
+            async with aiofiles.open(path, mode, encoding=encoding) as f:
                 await f.write(content)
-            
-            # Get actual bytes written
+
             size = p.stat().st_size
-            
-            return self._success(
-                path=str(p),
-                bytes_written=size
-            )
+            logger.info(f"Write complete: {path} | final_size={size} bytes")
+
+            return self._success(path=str(p), bytes_written=size, appended=append)
         except PermissionError:
+            logger.error(f"Permission denied writing to: {path}")
             return self._error(f"Permission denied: {path}")
         except Exception as e:
+            logger.exception(f"Failed to write file: {path} | error={e}")
             return self._error(str(e))
 
 
@@ -294,6 +311,7 @@ class FileSystemModule(BaseModule):
         Returns:
             Success with path and replacement info, or error
         """
+        logger.info(f"Editing file: {path}")
         try:
             p = Path(path)
             if not p.exists():
@@ -337,6 +355,7 @@ class FileSystemModule(BaseModule):
 
     async def delete_file(self, path: str) -> dict:
         """Delete a file."""
+        logger.warning(f"Deleting file: {path}")
         try:
             p = Path(path)
             if not p.exists():
@@ -364,6 +383,7 @@ class FileSystemModule(BaseModule):
         If destination is a directory, the file is copied into it with the same name.
         Parent directories are created if needed.
         """
+        logger.info(f"Copying file: {source} -> {destination}")
         try:
             src = Path(source)
             dst = Path(destination)
@@ -407,6 +427,7 @@ class FileSystemModule(BaseModule):
         If destination is a directory, the source is moved into it.
         Parent directories are created if needed.
         """
+        logger.info(f"Moving file: {source} -> {destination}")
         try:
             src = Path(source)
             dst = Path(destination)
@@ -464,6 +485,7 @@ class FileSystemModule(BaseModule):
         Returns:
             List of matching file paths with basic info
         """
+        logger.debug(f"Searching files in: {path} | pattern={pattern} | max_results={max_results} | include_hidden={include_hidden}")
         try:
             p = Path(path)
             if not p.exists():
@@ -552,6 +574,7 @@ class FileSystemModule(BaseModule):
 
     async def file_exists(self, path: str) -> dict:
         """Check if a file or directory exists."""
+        logger.debug(f"Checking existence: {path}")
         try:
             p = Path(path)
             exists = p.exists()
@@ -571,6 +594,7 @@ class FileSystemModule(BaseModule):
 
     async def get_file_info(self, path: str) -> dict:
         """Get detailed info about a file or directory."""
+        logger.debug(f"Getting file info: {path}")
         try:
             p = Path(path)
             if not p.exists():
