@@ -3,3 +3,8 @@ aiofiles>=23.0
 pyyaml>=6.0
 aiohttp>=3.9.0
 psutil>=5.9.0
+
+# plan_classification engine dependencies
+PyMuPDF>=1.23.0
+anthropic>=0.20.0
+Pillow>=10.0.0

@@ -50,6 +50,10 @@ class Config:
         return self._config.get("centralApiUrl", "ws://localhost:8000/agent/ws")
 
     @property
+    def dev_api_url(self) -> str | None:
+        return self._config.get("devApiUrl", None)
+
+    @property
     def log_level(self) -> str:
         return self._config.get("logLevel", "INFO")
 

@@ -101,13 +101,23 @@ async def main():
         on_force_update=on_force_update
     )
     
-    # Initialize connection with update manager
+    # Initialize production connection with update manager
     connection = AgentConnection(
         server_url=config.central_api_url,
         identity=identity,
         dispatcher=dispatcher,
         update_manager=update_manager
     )
+    
+    # Initialize dev connection if configured
+    dev_connection = None
+    if config.dev_api_url:
+        dev_connection = AgentConnection(
+            server_url=config.dev_api_url,
+            identity=identity,
+            dispatcher=dispatcher,
+            update_manager=None,
+        )
     
     # Print startup info
     print("=" * 50)
@@ -117,14 +127,21 @@ async def main():
     print(f"  User:         {identity['username']}")
     print(f"  Capabilities: {', '.join(identity['capabilities'])}")
     print(f"  Server:       {config.central_api_url}")
+    if dev_connection:
+        print(f"  Dev Server:   {config.dev_api_url}")
     print("=" * 50)
     
     # Check for updates on startup (non-blocking)
     asyncio.create_task(check_for_updates_on_startup())
     
-    # Connect and run forever
-    logger.info("Starting connection to central API...")
-    await connection.run_forever()
+    # Connect and run forever — both connections in parallel
+    tasks = [connection.run_forever()]
+    if dev_connection:
+        logger.info(f"Dev connection enabled: {config.dev_api_url}")
+        tasks.append(dev_connection.run_forever())
+    
+    logger.info("Starting connection(s) to central API...")
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":

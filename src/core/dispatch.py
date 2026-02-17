@@ -2,15 +2,17 @@ from src.modules.filesystem.operations import FileSystemModule
 from src.modules.ui.dialogs import UIModule
 from src.modules.drawing_coordinator.operations import DrawingCoordinatorModule
 from src.modules.document_creation.operations import DocumentCreationModule
+from src.modules.estimator.operations import EstimatorModule
 
 
 class CommandDispatcher:
     def __init__(self):
         self.modules = {
-            "filesystem": FileSystemModule(),
-            "ui": UIModule(),
-            "drawing_coordinator": DrawingCoordinatorModule(),
-            "document_creation": DocumentCreationModule(),
+            "filesystem":           FileSystemModule(),
+            "ui":                   UIModule(),
+            "drawing_coordinator":  DrawingCoordinatorModule(),
+            "document_creation":    DocumentCreationModule(),
+            "estimator":            EstimatorModule(),
         }
 
     def get_capabilities(self) -> list[str]:
